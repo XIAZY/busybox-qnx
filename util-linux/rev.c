@@ -31,6 +31,10 @@
 #endif
 
 /* In-place invert */
+#if defined(__QNX__)
+/* QNX's <string.h> has its own strrev() */
+# define strrev bb_strrev
+#endif
 static void strrev(CHAR_T *s, int len)
 {
 	int i;
