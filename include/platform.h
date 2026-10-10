@@ -508,6 +508,30 @@ typedef unsigned smalluint;
 # undef HAVE_PRINTF_PERCENTM
 #endif
 
+#if defined(__QNX__)
+/* QNX 6.6 / BlackBerry 10 */
+# undef HAVE_DPRINTF
+# undef HAVE_MEMRCHR
+# undef HAVE_STPCPY
+# undef HAVE_STPNCPY
+# undef HAVE_MEMPCPY
+# undef HAVE_STRCHRNUL
+# undef HAVE_STRVERSCMP
+# undef HAVE_VASPRINTF
+# undef HAVE_GETLINE
+# undef HAVE_UNLOCKED_STDIO
+# undef HAVE_UNLOCKED_LINE_OPS
+# undef HAVE_MNTENT_H
+# undef HAVE_SYS_STATFS_H
+# undef HAVE_SETBIT
+# undef HAVE_SIGHANDLER_T
+# undef HAVE_XTABS
+# undef HAVE_PRINTF_PERCENTM
+# undef HAVE_NET_ETHERNET_H
+/* for the va_list in vasprintf()'s declaration below */
+# include <stdarg.h>
+#endif
+
 #if defined(__dietlibc__)
 # undef HAVE_STRCHRNUL
 #endif
