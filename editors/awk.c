@@ -3406,6 +3406,14 @@ static var *evaluate(node *op, var *res)
 				v &= 0x7fffffffffffffffULL;
 # endif
 				R_d = (double)v / 0x8000000000000000ULL;
+#elif RAND_MAX == 0x7fff
+				/* QNX: 15 bits a call */
+				uint64_t v = 0;
+				int i;
+				for (i = 0; i < 5; i++)
+					v = (v << 15) ^ (uint64_t)rand();
+				v &= 0x7fffffffffffffffULL;
+				R_d = (double)v / 0x8000000000000000ULL;
 #else
 # error Not implemented for this value of RAND_MAX
 #endif
