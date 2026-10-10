@@ -533,6 +533,9 @@ typedef unsigned smalluint;
 /* QNX does not restart a system call that a signal interrupted: it
  * returns EINTR, and <signal.h> does not define the flag. */
 # define SA_RESTART 0
+# ifndef LONG_BIT
+#  define LONG_BIT (__SIZEOF_LONG__ * 8)
+# endif
 #endif
 
 #if defined(__dietlibc__)
