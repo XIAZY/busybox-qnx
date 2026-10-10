@@ -478,7 +478,9 @@ static const char mode_name[] ALIGN1 =
 	MI_ENTRY("echoke",   local,       SANE_SET   | REV,  ECHOKE,     0 )
 	MI_ENTRY("crtkill",  local,       OMIT       | REV,  ECHOKE,     0 )
 #endif
+#ifdef FLUSHO
 	MI_ENTRY("flusho",   local,       SANE_UNSET | REV,  FLUSHO,     0 )
+#endif
 #ifdef EXTPROC
 	MI_ENTRY("extproc",  local,       SANE_UNSET | REV,  EXTPROC,    0 )
 #endif
@@ -642,7 +644,9 @@ static const struct mode_info mode_info[] ALIGN4 = {
 	MI_ENTRY("echoke",   local,       SANE_SET   | REV,  ECHOKE,     0 )
 	MI_ENTRY("crtkill",  local,       OMIT       | REV,  ECHOKE,     0 )
 #endif
+#ifdef FLUSHO
 	MI_ENTRY("flusho",   local,       SANE_UNSET | REV,  FLUSHO,     0 )
+#endif
 #ifdef EXTPROC
 	MI_ENTRY("extproc",  local,       SANE_UNSET | REV,  EXTPROC,    0 )
 #endif
