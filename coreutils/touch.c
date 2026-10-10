@@ -72,6 +72,41 @@
 
 #include "libbb.h"
 
+#if defined(__QNX__)
+/* QNX has no utimensat() or futimens(): utimes() by the path, to the
+ * microsecond, and always through a symbolic link. */
+# define UTIME_NOW  ((1l << 30) - 1l)
+# define UTIME_OMIT ((1l << 30) - 2l)
+# define AT_FDCWD 0
+# define AT_SYMLINK_NOFOLLOW 0
+static int qnx_utimens(const char *path, const struct timespec ts[2])
+{
+	struct timeval tv[2];
+	struct stat st;
+	int i;
+
+	if ((ts[0].tv_nsec == UTIME_OMIT || ts[1].tv_nsec == UTIME_OMIT)
+	 && stat(path, &st) != 0
+	) {
+		return -1;
+	}
+	for (i = 0; i < 2; i++) {
+		if (ts[i].tv_nsec == UTIME_NOW) {
+			gettimeofday(&tv[i], NULL);
+		} else if (ts[i].tv_nsec == UTIME_OMIT) {
+			tv[i].tv_sec = i ? st.st_mtime : st.st_atime;
+			tv[i].tv_usec = 0;
+		} else {
+			tv[i].tv_sec = ts[i].tv_sec;
+			tv[i].tv_usec = ts[i].tv_nsec / 1000;
+		}
+	}
+	return utimes(path, tv);
+}
+# define utimensat(dirfd, path, ts, flags) qnx_utimens(path, ts)
+# define futimens(fd, ts) qnx_utimens(*argv, ts)
+#endif
+
 int touch_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int touch_main(int argc UNUSED_PARAM, char **argv)
 {
@@ -134,8 +169,12 @@ int touch_main(int argc UNUSED_PARAM, char **argv)
 		xstat(reference_file, &stbuf);
 		timebuf[0].tv_sec = stbuf.st_atime;
 		timebuf[1].tv_sec = stbuf.st_mtime;
+#if defined(__QNX__)
+		timebuf[0].tv_nsec = timebuf[1].tv_nsec = 0;
+#else
 		timebuf[0].tv_nsec = stbuf.st_atim.tv_nsec;
 		timebuf[1].tv_nsec = stbuf.st_mtim.tv_nsec;
+#endif
 	}
 	if (opts & (OPT_d|OPT_t)) {
 		struct tm tm_time;
