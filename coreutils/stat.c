@@ -149,6 +149,13 @@ static const char *file_type(const struct stat *st)
 	return "weird file";
 }
 
+#if defined(__QNX__)
+/* QNX's struct stat has whole seconds only */
+# define STAT_TS(st, x) (&(struct timespec){ (st)->st_##x##time, 0 })
+#else
+# define STAT_TS(st, x) (&(st)->st_##x##tim)
+#endif
+
 static const char *human_time(struct timespec *ts)
 {
 	char fmt[sizeof("%Y-%m-%d %H:%M:%S.123456789 %z") + /*paranoia*/ 8];
@@ -380,19 +387,19 @@ static void FAST_FUNC print_stat(char *pformat, const char m,
 		strcat(pformat, "lu");
 		printf(pformat, (unsigned long) statbuf->st_blksize);
 	} else if (m == 'x') {
-		printfs(pformat, human_time(&statbuf->st_atim));
+		printfs(pformat, human_time(STAT_TS(statbuf, a)));
 	} else if (m == 'X') {
 		strcat(pformat, TYPE_SIGNED(time_t) ? "ld" : "lu");
 		/* note: (unsigned long) would be wrong:
 		 * imagine (unsigned long64)int32 */
 		printf(pformat, (long) statbuf->st_atime);
 	} else if (m == 'y') {
-		printfs(pformat, human_time(&statbuf->st_mtim));
+		printfs(pformat, human_time(STAT_TS(statbuf, m)));
 	} else if (m == 'Y') {
 		strcat(pformat, TYPE_SIGNED(time_t) ? "ld" : "lu");
 		printf(pformat, (long) statbuf->st_mtime);
 	} else if (m == 'z') {
-		printfs(pformat, human_time(&statbuf->st_ctim));
+		printfs(pformat, human_time(STAT_TS(statbuf, c)));
 	} else if (m == 'Z') {
 		strcat(pformat, TYPE_SIGNED(time_t) ? "ld" : "lu");
 		printf(pformat, (long) statbuf->st_ctime);
