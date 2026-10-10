@@ -155,6 +155,19 @@ char* FAST_FUNC strsep(char **stringp, const char *delim)
 }
 #endif
 
+#if defined(__QNX__)
+char* FAST_FUNC strndup(const char *s, size_t n)
+{
+	size_t len = strnlen(s, n);
+	char *p = malloc(len + 1);
+	if (p) {
+		memcpy(p, s, len);
+		p[len] = '\0';
+	}
+	return p;
+}
+#endif
+
 #ifndef HAVE_STPCPY
 char* FAST_FUNC stpcpy(char *p, const char *to_add)
 {

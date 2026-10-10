@@ -632,6 +632,10 @@ extern int ttyname_r(int fd, char *buf, size_t buflen);
 typedef void (*sighandler_t)(int);
 #endif
 
+#if defined(__QNX__)
+extern char *strndup(const char *s, size_t n) FAST_FUNC;
+#endif
+
 #ifndef HAVE_STPCPY
 extern char *stpcpy(char *p, const char *to_add) FAST_FUNC;
 #endif
