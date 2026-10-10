@@ -1189,6 +1189,11 @@ char *safe_gethostname(void) FAST_FUNC;
 /* Convert each alpha char in str to lower-case */
 char* str_tolower(char *str) FAST_FUNC;
 
+#if defined(__QNX__)
+/* QNX's <stdlib.h> has its own utoa() and itoa(), with other arguments */
+# define utoa bb_utoa
+# define itoa bb_itoa
+#endif
 char *utoa(unsigned n) FAST_FUNC;
 char *itoa(int n) FAST_FUNC;
 /* Returns a pointer past the formatted number, does NOT null-terminate */
