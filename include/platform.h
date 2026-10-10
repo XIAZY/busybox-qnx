@@ -530,6 +530,9 @@ typedef unsigned smalluint;
 # undef HAVE_NET_ETHERNET_H
 /* for the va_list in vasprintf()'s declaration below */
 # include <stdarg.h>
+/* QNX does not restart a system call that a signal interrupted: it
+ * returns EINTR, and <signal.h> does not define the flag. */
+# define SA_RESTART 0
 #endif
 
 #if defined(__dietlibc__)
