@@ -2017,6 +2017,12 @@ unsigned long long bb_makedev(unsigned major, unsigned minor) FAST_FUNC;
 #undef makedev
 #define makedev(a,b) bb_makedev(a,b)
 #endif
+#if defined(__QNX__)
+/* QNX's makedev() takes the node as well: makedev(node, major, minor) */
+static ALWAYS_INLINE dev_t bb_qnx_makedev(unsigned ma, unsigned mi) { return makedev(0, ma, mi); }
+# undef makedev
+# define makedev(a,b) bb_qnx_makedev(a,b)
+#endif
 
 
 /* "Keycodes" that report an escape sequence.
