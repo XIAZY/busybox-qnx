@@ -164,6 +164,19 @@
 # define bswap_64 __bswap64
 # define bswap_32 __bswap32
 # define bswap_16 __bswap16
+#elif defined(__QNX__)
+/* QNX has no <endian.h> or <byteswap.h>; <gulliver.h> has the swaps */
+# include <gulliver.h>
+# define bswap_64(x) ENDIAN_RET64(x)
+# define bswap_32(x) ENDIAN_RET32(x)
+# define bswap_16(x) ENDIAN_RET16(x)
+# define LITTLE_ENDIAN 1234
+# define BIG_ENDIAN 4321
+# if defined(__LITTLEENDIAN__)
+#  define BYTE_ORDER LITTLE_ENDIAN
+# else
+#  define BYTE_ORDER BIG_ENDIAN
+# endif
 #else
 # include <byteswap.h>
 # include <endian.h>
