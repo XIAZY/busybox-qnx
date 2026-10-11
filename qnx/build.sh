@@ -28,6 +28,8 @@ if [ -z "${SOURCE_DATE_EPOCH:-}" ]; then
         echo "error: set SOURCE_DATE_EPOCH to the commit's time (git log -1 --format=%ct)" >&2; exit 1; }
 fi
 export SOURCE_DATE_EPOCH
+# The time is written out in the build machine's time zone.
+export TZ=UTC
 
 hostcc=${HOSTCC:-cc}
 jobs=$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 2)
