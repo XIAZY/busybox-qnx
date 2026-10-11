@@ -1,13 +1,21 @@
-# BusyBox for BlackBerry 10
+# BusyBox for QNX 6.5 and BlackBerry 10
 
-This is BusyBox 1.38.0 with the changes it needs to build
-for and run on BlackBerry 10: QNX 8 on 32-bit ARM. The result is one
-program of about 650 KB with 141 tools, linked against the phone's own
-libraries (`libc`, `libm`, `libsocket`, `libbps`).
+This is BusyBox 1.38.0 with the changes it needs to build for and run on
+QNX: QNX 6.5.0 on x86, and BlackBerry 10 (QNX 8 on 32-bit ARM). One source
+for both; the result is one program of 450 to 650 KB with 141 tools,
+linked against the system's own libraries (`libc`, `libm`, `libsocket`,
+and `libbps` on the phone).
 
 BusyBox does not support QNX itself. Every change here is inside
 `#if defined(__QNX__)` or adds a case for it, one commit per cause; the
 commit messages give the error each one answers.
+
+**QNX 6.5 is the baseline.** BlackBerry 10 is built on it and its C
+library has more: 222 names that 6.5's lacks. Both programs are built with
+BlackBerry 10's public SDK, so the source uses nothing that 6.5 does not
+have, and where BusyBox needs one of those names it brings its own (see
+"What differs"). `qnx/check-names.sh` holds a build to that: it fails when
+the program asks the loader for a name outside the allowed ones.
 
 ## Building
 
@@ -32,7 +40,14 @@ released files are built with:
         qnx/build.sh
 
 The script configures with `configs/bb10_defconfig` and leaves the stripped
-program in `./busybox`.
+program in `./busybox`. That is the build for BlackBerry 10.
+
+The build for QNX 6.5 on x86 uses the same SDK's x86 half (its headers
+are the same; the libraries are in `qnx6/x86` of the SDK), clang for
+`i386` without SSE and without the stack protector, and lld. It has been
+built and checked that way by hand; the toolchain image does not carry the
+x86 half and a compiler driver for it yet, and `qnx/build.sh` builds it
+once the image does.
 
 BusyBox writes its build time into the program; `SOURCE_DATE_EPOCH` sets it
 to the time of the commit, so the same commit built with the same image
@@ -52,8 +67,8 @@ Two helpers stand between BusyBox's build and the toolchain:
     busybox ash check.sh /path/to/busybox        # on the device
     busybox ash check.sh /path/to/busybox net    # with http and https too
 
-`qnx/check.sh` runs about a hundred small commands, one or more for most
-tools, and compares what comes out. The file has to be named `busybox`.
+`qnx/check.sh` runs about 110 small commands, one or more for most
+tools, and compares what comes out. It is the same on both systems. The file has to be named `busybox`.
 Checks that need symbolic links, permissions or named pipes are skipped in
 a directory that has none, such as a FAT memory card.
 
@@ -101,11 +116,47 @@ records, `sync -f` (`syncfs()`), `stat -f` (`statfs()`), `sendfile()`.
 
 ## What differs from BusyBox on Linux
 
+- **Options are parsed by BusyBox itself** (`libbb/qnx_getopt.c`, from musl
+  libc): QNX 6.5 has no `getopt_long()`. As with musl, a tool that reads
+  its options with plain `getopt()` (`head`, `od`, `awk`, `unzip`) wants
+  them before the other arguments; the rest take them anywhere
+  (`grep PATTERN FILE -c`).
+- `date +%s` is done by `date`: QNX's `strftime()` has no `%s`.
 - `touch -h` has no effect: times are set with `utimes()`, which always
   follows a symbolic link.
 - `stat` and `touch -r` work in whole seconds.
 - A system call that a signal interrupts is not restarted by the system
   (QNX has no `SA_RESTART`); BusyBox's own retrying covers it.
+- A server socket on "any address" (`nc -l`) takes IPv4 and IPv6 peers, as
+  on Linux; QNX's default would be IPv6 only.
 - BusyBox finds its own program through `/proc/self/exe`, which QNX does
   not have. So `ash` does not run the tools by itself; they are found on
   the `PATH`, by links made with `busybox --install -s DIR`.
+
+## What QNX 6.5 lacks and BusyBox brings
+
+| Name | What is used instead |
+|---|---|
+| `getopt_long` | `bb_getopt_long` and `bb_getopt`, from musl |
+| `timegm`, `strnlen` | BusyBox's own, in `libbb/platform.c` |
+| `mkdtemp`, `strcasestr` | BusyBox's own, as on other systems without them |
+| `__h_errno` (BlackBerry 10's `h_errno` is a call of it) | the plain variable `h_errno`, which both have |
+| `__stack_chk_fail`, `__stack_chk_guard` | supplied by BusyBox where it is built without the stack protector: the parts of the SDK's static C library that are linked in (`regcomp`, `scandir`, `popen`, `strptime`, `getlogin`) need them |
+
+Only for x86, whichever system: BusyBox's replacement functions go by
+names of their own (`bb_strndup`, `bb_stpcpy`, ...), because of the
+register calling convention BusyBox uses there; and the byte swaps are the
+compiler's, because the ones in QNX's headers are x86 assembly that clang
+does not take.
+
+## Licences
+
+BusyBox is under the GNU General Public License, version 2 (`LICENSE`).
+`libbb/qnx_getopt.c` is from musl libc, under the MIT licence; its notice
+is in the file. The programs also contain a few helper functions of LLVM's
+compiler-rt (Apache License 2.0 with LLVM exceptions), which the toolchain
+links in, and the parts of the SDK's static C library named above.
+
+`qnx/qnx650-names/` lists the names that QNX 6.5.0's `libc.so.3`,
+`libm.so.2` and `libsocket.so.3` export: names only, read from the
+libraries of a QNX 6.5.0 system, none of their code.
