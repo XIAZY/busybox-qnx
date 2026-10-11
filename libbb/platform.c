@@ -187,21 +187,6 @@ time_t FAST_FUNC timegm(struct tm *tm)
 	return (time_t)(((days * 24 + tm->tm_hour) * 60 + tm->tm_min) * 60 + tm->tm_sec);
 }
 
-# if !defined(__SSP__)
-/* Parts of the SDK's static C library that get linked in (regcomp,
- * scandir, popen, strptime ...) were compiled with the stack protector,
- * whose two names QNX 6.5's libc.so does not have. Where BusyBox itself
- * is built without the protector, they are supplied here. */
-void *__stack_chk_guard = (void *)0x9e3779b9;
-void __stack_chk_fail(void);
-void __stack_chk_fail(void)
-{
-	static const char msg[] ALIGN1 = "stack smashing detected\n";
-	write(2, msg, sizeof(msg) - 1);
-	abort();
-}
-# endif
-
 char* FAST_FUNC strndup(const char *s, size_t n)
 {
 	size_t len = strnlen(s, n);
