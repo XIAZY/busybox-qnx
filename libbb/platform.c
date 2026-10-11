@@ -156,6 +156,37 @@ char* FAST_FUNC strsep(char **stringp, const char *delim)
 #endif
 
 #if defined(__QNX__)
+size_t FAST_FUNC strnlen(const char *s, size_t n)
+{
+	const char *end = memchr(s, '\0', n);
+	return end ? (size_t)(end - s) : n;
+}
+
+/* The time in *tm, taken as UTC, in seconds since 1970. Like mktime(),
+ * fields out of their range are carried over; tm_wday and tm_yday are
+ * not set. */
+time_t FAST_FUNC timegm(struct tm *tm)
+{
+	long long year = tm->tm_year + 1900LL + tm->tm_mon / 12;
+	int mon = tm->tm_mon % 12;
+	long long era, days;
+	unsigned yoe, doy, doe;
+
+	if (mon < 0) {
+		mon += 12;
+		year--;
+	}
+	/* Days since 1970-01-01 of the first of that month: the year is
+	 * counted from March, so that the leap day is its last. */
+	year -= mon < 2;
+	era = (year >= 0 ? year : year - 399) / 400;
+	yoe = (unsigned)(year - era * 400);
+	doy = (153 * (mon + (mon < 2 ? 10 : -2)) + 2) / 5;
+	doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+	days = era * 146097 + (long long)doe - 719468 + (tm->tm_mday - 1);
+	return (time_t)(((days * 24 + tm->tm_hour) * 60 + tm->tm_min) * 60 + tm->tm_sec);
+}
+
 char* FAST_FUNC strndup(const char *s, size_t n)
 {
 	size_t len = strnlen(s, n);

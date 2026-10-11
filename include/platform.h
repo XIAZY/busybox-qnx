@@ -513,6 +513,8 @@ typedef unsigned smalluint;
 /* QNX 6.6 / BlackBerry 10 */
 # undef HAVE_DPRINTF
 # undef HAVE_MEMRCHR
+# undef HAVE_MKDTEMP
+# undef HAVE_STRCASESTR
 # undef HAVE_STPCPY
 # undef HAVE_STPNCPY
 # undef HAVE_MEMPCPY
@@ -616,6 +618,18 @@ typedef unsigned smalluint;
 # define stpcpy bb_stpcpy
 # define stpncpy bb_stpncpy
 extern char *strndup(const char *s, size_t n) FAST_FUNC;
+/* Not in QNX 6.5's C library. BlackBerry 10's has them and its headers
+ * declare them, so ours go by other names here too; the headers come
+ * first, so that the names are changed only after them. */
+# include <stdlib.h>
+# include <string.h>
+# include <time.h>
+# define strnlen bb_strnlen
+extern size_t strnlen(const char *s, size_t n) FAST_FUNC;
+# define timegm bb_timegm
+extern time_t timegm(struct tm *tm) FAST_FUNC;
+# define mkdtemp bb_mkdtemp
+# define strcasestr bb_strcasestr
 #endif
 
 #ifndef HAVE_DPRINTF
