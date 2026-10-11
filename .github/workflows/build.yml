@@ -1,0 +1,85 @@
+# Builds BusyBox for BlackBerry 10 with qnx/build.sh in the toolchain's
+# container image. Every push and pull request keeps the program as a build
+# result; a tag v* publishes it as a release with its checksum.
+#
+# The build is reproducible: the same commit and the same image give the
+# same file (qnx/README.md), so a release carries the same bytes as the
+# build of its commit.
+name: build
+
+on:
+  push:
+    branches: [master]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # ghcr.io/xiazy/blackberry10-toolchain, pinned by digest (the multi-arch tag).
+  IMAGE: ghcr.io/xiazy/blackberry10-toolchain@sha256:e56e8572589d46d86f7be108d6d14cfe20a5097c46ac9c655edd042eecd437be
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src --user "$(id -u):$(id -g)" \
+            -e SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)" \
+            "$IMAGE" qnx/build.sh
+      - name: Check that it is a QNX program for 32-bit ARM
+        run: |
+          file busybox
+          readelf -h busybox | grep -q 'Class: *ELF32'
+          readelf -h busybox | grep -q 'Machine: *ARM'
+          readelf -l busybox | grep -q 'interpreter: /usr/lib/ldqnx.so.2'
+          # Linked against the phone's own libraries and nothing else.
+          needed=$(readelf -d busybox | sed -n 's/.*(NEEDED).*\[\(.*\)\]/\1/p' | sort | tr '\n' ' ')
+          echo "needs: $needed"
+          [ "$needed" = "libbps.so.3 libc.so.3 libm.so.2 libsocket.so.3 " ]
+      - name: Name the file and write its checksum
+        run: |
+          version=$(sed -n 's/^VERSION = //p; s/^PATCHLEVEL = //p; s/^SUBLEVEL = //p' Makefile | paste -sd.)
+          name=busybox-$version-bb10-armle-v7
+          mkdir out
+          cp busybox "out/$name"
+          (cd out && sha256sum "$name" > "$name.sha256" && cat "$name.sha256")
+      - uses: actions/upload-artifact@v4
+        with:
+          name: busybox-bb10-armle-v7
+          path: out/*
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: busybox-bb10-armle-v7
+          path: out
+      - name: Notes
+        run: |
+          {
+            echo "BusyBox for BlackBerry 10 (QNX 8, 32-bit ARM): one program, linked against the phone's own libraries. Built from this tag by the build workflow; \`qnx/README.md\` says how to build it again and get the same file."
+            echo
+            echo '```'
+            cat out/*.sha256
+            echo '```'
+            echo
+            # The document's lists: the tools that are in, and those that are out.
+            sed -n '/^## The tools that are in/,/^## What differs/p' qnx/README.md | sed '$d'
+          } > notes.md
+          cat notes.md
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" out/* --title "$GITHUB_REF_NAME" --notes-file notes.md
