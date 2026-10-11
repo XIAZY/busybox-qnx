@@ -1,6 +1,6 @@
 # BusyBox for BlackBerry 10
 
-This branch (`qnx`) is BusyBox 1.38.0 with the changes it needs to build
+This is BusyBox 1.38.0 with the changes it needs to build
 for and run on BlackBerry 10: QNX 8 on 32-bit ARM. The result is one
 program of about 650 KB with 141 tools, linked against the phone's own
 libraries (`libc`, `libm`, `libsocket`, `libbps`).
@@ -23,13 +23,22 @@ It needs on the `PATH`:
   `make` and `python3`.
 
 The container image `ghcr.io/xiazy/blackberry10-toolchain` has all of
-them. From a clean checkout:
+them. From a clean checkout, with the version of the image that the
+released files are built with:
 
     docker run --rm -v "$PWD:/src" -w /src --user "$(id -u):$(id -g)" \
-        ghcr.io/xiazy/blackberry10-toolchain:latest qnx/build.sh
+        -e SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)" \
+        ghcr.io/xiazy/blackberry10-toolchain@sha256:e56e8572589d46d86f7be108d6d14cfe20a5097c46ac9c655edd042eecd437be \
+        qnx/build.sh
 
 The script configures with `configs/bb10_defconfig` and leaves the stripped
 program in `./busybox`.
+
+BusyBox writes its build time into the program; `SOURCE_DATE_EPOCH` sets it
+to the time of the commit, so the same commit built with the same image
+gives the same file, byte for byte. `.github/workflows/build.yml` builds
+every push this way, and a tag `v*` publishes that build as a release with
+its checksum, so a released file can be rebuilt and compared.
 
 Two helpers stand between BusyBox's build and the toolchain:
 
