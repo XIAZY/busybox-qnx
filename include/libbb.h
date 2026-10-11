@@ -1189,6 +1189,15 @@ char *safe_gethostname(void) FAST_FUNC;
 /* Convert each alpha char in str to lower-case */
 char* str_tolower(char *str) FAST_FUNC;
 
+#if defined(__QNX__) && BB_LITTLE_ENDIAN
+/* QNX's htons() and ntohs() are, on x86, inline assembly that clang does
+ * not take for an int argument ("unsupported inline asm: input with type
+ * 'int' matching output with type '_Uint16t'"). */
+# undef htons
+# undef ntohs
+# define htons(x) __builtin_bswap16((uint16_t)(x))
+# define ntohs(x) __builtin_bswap16((uint16_t)(x))
+#endif
 #if defined(__QNX__)
 /* QNX's <stdlib.h> has its own utoa() and itoa(), with other arguments */
 # define utoa bb_utoa

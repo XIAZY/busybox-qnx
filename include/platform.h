@@ -165,11 +165,12 @@
 # define bswap_32 __bswap32
 # define bswap_16 __bswap16
 #elif defined(__QNX__)
-/* QNX has no <endian.h> or <byteswap.h>; <gulliver.h> has the swaps */
-# include <gulliver.h>
-# define bswap_64(x) ENDIAN_RET64(x)
-# define bswap_32(x) ENDIAN_RET32(x)
-# define bswap_16(x) ENDIAN_RET16(x)
+/* QNX has no <endian.h> or <byteswap.h>. The swaps are the compiler's:
+ * those of QNX's <gulliver.h> are, on x86, inline assembly that clang
+ * does not take ("unsupported inline asm"). */
+# define bswap_64(x) __builtin_bswap64(x)
+# define bswap_32(x) __builtin_bswap32(x)
+# define bswap_16(x) __builtin_bswap16(x)
 # define LITTLE_ENDIAN 1234
 # define BIG_ENDIAN 4321
 # if defined(__LITTLEENDIAN__)
