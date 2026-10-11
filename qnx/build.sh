@@ -6,17 +6,16 @@
 #
 # bb10 (the default) is BlackBerry 10, 32-bit ARM; qnx65 is QNX 6.5 on x86.
 # Both are built from the same source with the same configuration
-# (configs/qnx_defconfig) and the BlackBerry 10 toolchain, which must be on
-# the PATH: its C compiler driver for the target (bb10-cc or qnx65-cc) and
-# binutils (GNU for ARM, LLVM's for x86); besides a C compiler for the build
-# machine (cc, or name one in HOSTCC), make, python3, and git or
-# SOURCE_DATE_EPOCH set. See qnx/README.md.
+# (configs/qnx_defconfig), each against its own system's SDK, with the
+# toolchain that must be on the PATH: the C compiler driver for the target
+# (bb10-cc or qnx65-cc) and binutils (GNU for ARM, LLVM's for x86); besides
+# a C compiler for the build machine (cc, or name one in HOSTCC), make,
+# python3, and git or SOURCE_DATE_EPOCH set. See qnx/README.md.
 set -eu
 
 target=${1:-bb10}
 cd "$(dirname "$0")/.."
 qnx=$(pwd)/qnx
-sdk=${QNX_TARGET:-/opt/bb10-sdk/target/qnx6}
 
 case $target in
 bb10)
@@ -71,20 +70,18 @@ make HOSTCC="$hostcc" qnx_defconfig
 # shellcheck disable=SC2086
 make HOSTCC="$hostcc" CC="$cc" LD="$ld" $tools -j"$jobs"
 
-# The program may ask the loader only for names that the system has.
+# The program may ask the loader only for names that its system's own
+# libraries have (qnx/check-names.sh; the toolchain's qnx65-check-names is
+# the same script).
 case $target in
 bb10)
-    # Against the SDK's own libraries for the phone.
+    sdk=${QNX_TARGET:-/opt/bb10-sdk/target/qnx6}/armle-v7
     READELF=${prefix}readelf "$qnx/check-names.sh" busybox \
-        "$sdk/armle-v7/lib/libc.so.3" "$sdk/armle-v7/lib/libm.so.2" \
-        "$sdk/armle-v7/lib/libsocket.so.3" "$sdk/armle-v7/usr/lib/libbps.so.3"
+        "$sdk/lib/libc.so.3" "$sdk/lib/libm.so.2" "$sdk/lib/libsocket.so.3" "$sdk/usr/lib/libbps.so.3"
     ;;
 qnx65)
-    # Against what QNX 6.5.0's libraries export: the SDK's x86 libraries,
-    # which the program is linked against, have more. The toolchain has the
-    # lists and the check (the same script as qnx/check-names.sh).
-    names=/opt/bb10-toolchain/share/qnx65-symbols
-    qnx65-check-names busybox "$names/libc.so.3.txt" "$names/libm.so.2.txt" "$names/libsocket.so.3.txt"
+    sdk=${QNX65_SDK:-/opt/qnx65-sdk}/qnx6/x86
+    qnx65-check-names busybox "$sdk/lib/libc.so.3" "$sdk/lib/libm.so.2" "$sdk/lib/libsocket.so.3"
     ;;
 esac
 ls -l busybox
