@@ -1,0 +1,15 @@
+#!/usr/bin/env python3
+"""Stand-in for bzip2 on a build machine that has none.
+
+BusyBox's build scripts pipe its usage texts and configuration through
+"bzip2 -1" and "bzip2 -9". qnx/build.sh puts this directory on the PATH
+only when no bzip2 is installed.
+"""
+import bz2
+import sys
+
+level = 9
+for arg in sys.argv[1:]:
+    if arg[1:].isdigit():
+        level = int(arg[1:])
+sys.stdout.buffer.write(bz2.compress(sys.stdin.buffer.read(), level))

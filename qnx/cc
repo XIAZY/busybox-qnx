@@ -1,0 +1,33 @@
+#!/usr/bin/env python3
+"""The C compiler for the BlackBerry 10 build of BusyBox: bb10-cc, with the
+link step's arguments put in a form its linker driver keeps the meaning of.
+
+bb10-cc compiles with clang and links with GNU ld for QNX. Its link step
+puts every -Wl option in front of all files and libraries, which is right
+for ordinary programs and wrong for two things BusyBox needs:
+
+ - BusyBox links its archives between -Wl,--start-group and
+   -Wl,--end-group, because they refer to each other. Moved to the front,
+   the group is empty and the link ends with hundreds of undefined
+   references. Here the group options are dropped and the archives are
+   named three times instead, which resolves the same references.
+
+ - Some functions that BlackBerry 10's libc.so does not export are in the
+   SDK's static C library only (scandir, glob, regcomp, strptime and
+   others). libcS.a, its position-independent form, is searched after
+   libc.so, so only what the shared library lacks is taken from it.
+
+Compiling is passed through unchanged.
+"""
+import os
+import sys
+
+args = sys.argv[1:]
+compiling = not args or any(
+    a in ("-c", "-S", "-E", "-M", "-MM", "--version", "-v", "-dumpversion", "-dumpmachine")
+    or a.startswith("-print-") for a in args)
+if not compiling:
+    args = [a for a in args if a not in ("-Wl,--start-group", "-Wl,--end-group")]
+    archives = [a for a in args if a.endswith(".a") and not a.startswith("-")]
+    args += archives + archives + ["-lc", "-l:libcS.a"]
+os.execvp("bb10-cc", ["bb10-cc"] + args)
