@@ -25,10 +25,9 @@
 #
 #   qnx/check-names.sh PROGRAM ALLOWED...
 #
-# Each ALLOWED is a shared library, or a text file with one name a line
-# (qnx/qnx650-names/*.txt: what QNX 6.5.0's libc, libm and libsocket
-# export). The program's needs are its undefined dynamic symbols (weak ones
-# aside, which the loader may leave unresolved) and the
+# Each ALLOWED is a shared library, or a text file with one name a line.
+# The program's needs are its undefined dynamic symbols (weak ones aside,
+# which the loader may leave unresolved) and the
 # data symbols it copies from a library (COPY relocations), which a list of
 # undefined symbols does not show. Any name outside the allowed ones is
 # printed, and the exit status is 1: the program would not load.

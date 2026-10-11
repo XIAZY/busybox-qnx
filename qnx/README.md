@@ -33,7 +33,7 @@ stripped program in `./busybox`; every build starts clean. They need on the
   `arm-unknown-nto-qnx6.5.0eabi`;
 - for `qnx65`: `qnx65-cc`, the driver for QNX 6.5 (clang and lld, with QNX
   SDP 6.5.0's own headers, libraries and gcc support files), LLVM's
-  binutils (`llvm-ar` and the rest), and `qnx65-check-names`;
+  binutils (`llvm-ar`, `llvm-readelf` and the rest);
 - a C compiler for the build machine (`cc`, or name one in `HOSTCC`),
   `make` and `python3`.
 

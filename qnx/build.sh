@@ -34,7 +34,7 @@ qnx65)
     cc="qnx65-cc -march=i486 -mno-sse"
     ld="ld.lld -m elf_i386"
     tools="AR=llvm-ar NM=llvm-nm STRIP=llvm-strip OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump"
-    needs="qnx65-cc ld.lld llvm-ar llvm-strip qnx65-check-names"
+    needs="qnx65-cc ld.lld llvm-ar llvm-strip llvm-readelf"
     ;;
 *)
     echo "usage: qnx/build.sh [bb10|qnx65]" >&2
@@ -71,8 +71,7 @@ make HOSTCC="$hostcc" qnx_defconfig
 make HOSTCC="$hostcc" CC="$cc" LD="$ld" $tools -j"$jobs"
 
 # The program may ask the loader only for names that its system's own
-# libraries have (qnx/check-names.sh; the toolchain's qnx65-check-names is
-# the same script).
+# libraries have (qnx/check-names.sh).
 case $target in
 bb10)
     sdk=${QNX_TARGET:-/opt/bb10-sdk/target/qnx6}/armle-v7
@@ -81,7 +80,8 @@ bb10)
     ;;
 qnx65)
     sdk=${QNX65_SDK:-/opt/qnx65-sdk}/qnx6/x86
-    qnx65-check-names busybox "$sdk/lib/libc.so.3" "$sdk/lib/libm.so.2" "$sdk/lib/libsocket.so.3"
+    READELF=llvm-readelf "$qnx/check-names.sh" busybox \
+        "$sdk/lib/libc.so.3" "$sdk/lib/libm.so.2" "$sdk/lib/libsocket.so.3"
     ;;
 esac
 ls -l busybox
