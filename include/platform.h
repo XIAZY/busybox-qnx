@@ -606,6 +606,17 @@ typedef unsigned smalluint;
  * These must come after all the HAVE_* macros are defined (or not)
  */
 
+#if defined(__QNX__)
+/* The compiler knows these three as C library functions and declares them
+ * itself, without the calling convention FAST_FUNC gives ours on x86
+ * ("declared with regparm(3) attribute was previously declared without").
+ * Ours go by other names. */
+# define strndup bb_strndup
+# define stpcpy bb_stpcpy
+# define stpncpy bb_stpncpy
+extern char *strndup(const char *s, size_t n) FAST_FUNC;
+#endif
+
 #ifndef HAVE_DPRINTF
 extern int dprintf(int fd, const char *format, ...);
 #endif
@@ -630,10 +641,6 @@ extern int ttyname_r(int fd, char *buf, size_t buflen);
 
 #ifndef HAVE_SIGHANDLER_T
 typedef void (*sighandler_t)(int);
-#endif
-
-#if defined(__QNX__)
-extern char *strndup(const char *s, size_t n) FAST_FUNC;
 #endif
 
 #ifndef HAVE_STPCPY
