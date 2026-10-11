@@ -153,7 +153,8 @@ headers are x86 assembly that clang does not take.
 
 BusyBox is under the GNU General Public License, version 2 (`LICENSE`).
 `libbb/qnx_getopt.c` is from musl libc, under the MIT licence; its notice
-is in the file. The programs also contain a few helper functions of LLVM's
+is in the file. `qnx/check-names.sh` is not part of BusyBox and is under
+the MIT licence too, so that other projects can use it as it is. The programs also contain a few helper functions of LLVM's
 compiler-rt (Apache License 2.0 with LLVM exceptions), which the toolchain
 links in, and the parts of the SDK's static C library named above.
 
