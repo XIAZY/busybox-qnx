@@ -76,7 +76,9 @@ and `busybox` itself, with `--list` and `--install`.
 
 `ash` has line editing, history, tab completion and job control. `wget`
 does https with BusyBox's own TLS, which **does not check the server's
-certificate**; it says so on each use.
+certificate**; it says so on each use. It never hands https to an
+`openssl` program on the machine, as BusyBox otherwise would: QNX 6.5's is
+OpenSSL 0.9.8 from 2010, which no server accepts any more.
 
 ## The tools that are out, and why
 
