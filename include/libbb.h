@@ -1189,6 +1189,11 @@ char *safe_gethostname(void) FAST_FUNC;
 /* Convert each alpha char in str to lower-case */
 char* str_tolower(char *str) FAST_FUNC;
 
+#if defined(__QNX__)
+/* BlackBerry 10's <netdb.h> makes h_errno a call of __h_errno(), which QNX
+ * 6.5's socket library does not have. The plain variable is in both. */
+# undef h_errno
+#endif
 #if defined(__QNX__) && BB_LITTLE_ENDIAN
 /* QNX's htons() and ntohs() are, on x86, inline assembly that clang does
  * not take for an int argument ("unsupported inline asm: input with type
