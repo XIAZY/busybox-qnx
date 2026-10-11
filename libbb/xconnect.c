@@ -369,6 +369,13 @@ static int create_and_bind_or_die(const char *bindaddr, int port, int sock_type)
 	} else {
 		fd = xsocket_type(&lsa, AF_UNSPEC, sock_type);
 		set_nport(&lsa->u.sa, htons(port));
+#if defined(__QNX__) && ENABLE_FEATURE_IPV6 && defined(IPV6_V6ONLY)
+		/* On QNX an IPv6 socket bound to "any address" takes IPv6
+		 * peers only, unless told otherwise; on Linux it takes IPv4
+		 * peers too, which is what the callers count on. */
+		if (lsa->u.sa.sa_family == AF_INET6)
+			setsockopt_int(fd, IPPROTO_IPV6, IPV6_V6ONLY, 0);
+#endif
 	}
 	setsockopt_reuseaddr(fd);
 	xbind(fd, &lsa->u.sa, lsa->len);
