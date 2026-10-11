@@ -39,4 +39,10 @@ make HOSTCC="$hostcc" bb10_defconfig
 # -nostdlib", is used to join object files ("-r"), and bb10-cc would link a
 # whole program there.
 make HOSTCC="$hostcc" CC="$qnx/cc" LD=${prefix}ld -j"$jobs"
+
+# The program may ask the phone's loader only for names that the phone's
+# libraries have (qnx/check-names.sh).
+sdk=${QNX_TARGET:-/opt/bb10-sdk/target/qnx6}/armle-v7
+READELF=${prefix}readelf "$qnx/check-names.sh" busybox \
+    "$sdk/lib/libc.so.3" "$sdk/lib/libm.so.2" "$sdk/lib/libsocket.so.3" "$sdk/usr/lib/libbps.so.3"
 ls -l busybox
