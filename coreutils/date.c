@@ -372,6 +372,24 @@ int date_main(int argc UNUSED_PARAM, char **argv)
 	}
 #endif
 
+#if defined(__QNX__)
+	/* QNX's strftime() has no %s (seconds since 1970): it is put in here */
+	{
+		char *p = fmt_dt2str;
+		while ((p = strchr(p, '%')) != NULL) {
+			if (p[1] == 's') {
+				int m = p - fmt_dt2str;
+				fmt_dt2str = xasprintf("%.*s%lld%s", m, fmt_dt2str, (long long)ts.tv_sec, p + 2);
+				p = fmt_dt2str + m;
+			} else if (p[1] != '\0') {
+				p += 2;
+			} else {
+				break;
+			}
+		}
+	}
+#endif
+
 #define date_buf bb_common_bufsiz1
 	setup_common_bufsiz();
 	if (*fmt_dt2str == '\0') {
