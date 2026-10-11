@@ -619,7 +619,7 @@ typedef unsigned smalluint;
 # define stpncpy bb_stpncpy
 extern char *strndup(const char *s, size_t n) FAST_FUNC;
 /* Not in QNX 6.5's C library. BlackBerry 10's has them and its headers
- * declare them, so ours go by other names here too; the headers come
+ * declare them, so ours go by other names on both; the headers come
  * first, so that the names are changed only after them. */
 # include <stdlib.h>
 # include <string.h>

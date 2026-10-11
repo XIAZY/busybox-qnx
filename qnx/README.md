@@ -11,43 +11,41 @@ BusyBox does not support QNX itself. Every change here is inside
 commit messages give the error each one answers.
 
 **QNX 6.5 is the baseline.** BlackBerry 10 is built on it and its C
-library has more: 222 names that 6.5's lacks. Both programs are built with
-BlackBerry 10's public SDK, so the source uses nothing that 6.5 does not
-have, and where BusyBox needs one of those names it brings its own (see
-"What differs"). `qnx/check-names.sh` holds a build to that: it fails when
-the program asks the loader for a name outside the allowed ones.
+library has more: 222 names that 6.5's lacks. Each program is built
+against its own system's SDK, and the source uses nothing that 6.5 does
+not have: where BusyBox needs one of those names it brings its own, on
+both systems (see "What QNX 6.5 lacks"). After each build
+`qnx/check-names.sh` confirms that the program asks the loader only for
+names its system's libraries have.
 
 ## Building
 
-    qnx/build.sh
+    qnx/build.sh bb10       # BlackBerry 10, 32-bit ARM (the default)
+    qnx/build.sh qnx65      # QNX 6.5 on x86
 
-It needs on the `PATH`:
+Both use the same configuration (`configs/qnx_defconfig`) and leave the
+stripped program in `./busybox`; every build starts clean. They need on the
+`PATH`:
 
-- `bb10-cc`, the C compiler driver of the BlackBerry 10 toolchain (clang
+- for `bb10`: `bb10-cc`, the C compiler driver for BlackBerry 10 (clang
   for the compiling, GNU ld for QNX for the linking, with the BlackBerry 10
-  SDK's headers and libraries);
-- the GNU binutils for `arm-unknown-nto-qnx6.5.0eabi`;
+  SDK's headers and libraries), and the GNU binutils for
+  `arm-unknown-nto-qnx6.5.0eabi`;
+- for `qnx65`: `qnx65-cc`, the driver for QNX 6.5 (clang and lld, with QNX
+  SDP 6.5.0's own headers, libraries and gcc support files), LLVM's
+  binutils (`llvm-ar` and the rest), and `qnx65-check-names`;
 - a C compiler for the build machine (`cc`, or name one in `HOSTCC`),
   `make` and `python3`.
 
 The container image `ghcr.io/xiazy/blackberry10-toolchain` has all of
-them. From a clean checkout, with the version of the image that the
-released files are built with:
+them (`qnx65-cc` from the version that added the QNX 6.5 target on). From a
+clean checkout, with the version of the image that the released files are
+built with:
 
     docker run --rm -v "$PWD:/src" -w /src --user "$(id -u):$(id -g)" \
         -e SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)" \
         ghcr.io/xiazy/blackberry10-toolchain@sha256:e56e8572589d46d86f7be108d6d14cfe20a5097c46ac9c655edd042eecd437be \
-        qnx/build.sh
-
-The script configures with `configs/bb10_defconfig` and leaves the stripped
-program in `./busybox`. That is the build for BlackBerry 10.
-
-The build for QNX 6.5 on x86 uses the same SDK's x86 half (its headers
-are the same; the libraries are in `qnx6/x86` of the SDK), clang for
-`i386` without SSE and without the stack protector, and lld. It has been
-built and checked that way by hand; the toolchain image does not carry the
-x86 half and a compiler driver for it yet, and `qnx/build.sh` builds it
-once the image does.
+        qnx/build.sh bb10
 
 BusyBox writes its build time into the program; `SOURCE_DATE_EPOCH` sets it
 to the time of the commit, so the same commit built with the same image
@@ -141,7 +139,7 @@ records, `sync -f` (`syncfs()`), `stat -f` (`statfs()`), `sendfile()`.
 | `timegm`, `strnlen` | BusyBox's own, in `libbb/platform.c` |
 | `mkdtemp`, `strcasestr` | BusyBox's own, as on other systems without them |
 | `__h_errno` (BlackBerry 10's `h_errno` is a call of it) | the plain variable `h_errno`, which both have |
-| `__stack_chk_fail`, `__stack_chk_guard` | supplied by BusyBox where it is built without the stack protector: the parts of the SDK's static C library that are linked in (`regcomp`, `scandir`, `popen`, `strptime`, `getlogin`) need them |
+| `<getopt.h>`, `O_NOFOLLOW` | `struct option` is defined where the header is missing; `unzip` opens files without `O_NOFOLLOW` on 6.5 |
 
 Two things are done on every QNX build, though it is x86 that needs them:
 BusyBox's replacement functions go by names of their own (`bb_strndup`,
@@ -154,10 +152,11 @@ headers are x86 assembly that clang does not take.
 BusyBox is under the GNU General Public License, version 2 (`LICENSE`).
 `libbb/qnx_getopt.c` is from musl libc, under the MIT licence; its notice
 is in the file. `qnx/check-names.sh` is not part of BusyBox and is under
-the MIT licence too, so that other projects can use it as it is. The programs also contain a few helper functions of LLVM's
-compiler-rt (Apache License 2.0 with LLVM exceptions), which the toolchain
-links in, and the parts of the SDK's static C library named above.
+the MIT licence too, so that other projects can use it as it is. 
 
-`qnx/qnx650-names/` lists the names that QNX 6.5.0's `libc.so.3`,
-`libm.so.2` and `libsocket.so.3` export: names only, read from the
-libraries of a QNX 6.5.0 system, none of their code.
+The programs also contain what the toolchain links in: for BlackBerry 10
+a few helper functions of LLVM's compiler-rt (Apache License 2.0 with LLVM
+exceptions); for QNX 6.5 gcc's start-up objects and helper functions
+(`crtbegin`, `libgcc`; GPL with the GCC runtime library exception); and
+for both the few functions that are only in the SDK's static C library
+(`regcomp`, `scandir`, `popen`, `strptime`, `getlogin`).

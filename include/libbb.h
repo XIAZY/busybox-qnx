@@ -1195,8 +1195,9 @@ char* str_tolower(char *str) FAST_FUNC;
 # define O_NOFOLLOW 0
 #endif
 #if defined(__QNX__)
-/* BlackBerry 10's <netdb.h> makes h_errno a call of __h_errno(), which QNX
- * 6.5's socket library does not have. The plain variable is in both. */
+/* BlackBerry 10's <netdb.h> makes h_errno a call of __h_errno(); QNX 6.5's
+ * has the plain variable, which BlackBerry 10's library has too. The same
+ * on both: the variable. */
 # undef h_errno
 #endif
 #if defined(__QNX__) && BB_LITTLE_ENDIAN
