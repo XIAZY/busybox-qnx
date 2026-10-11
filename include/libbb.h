@@ -1189,6 +1189,11 @@ char *safe_gethostname(void) FAST_FUNC;
 /* Convert each alpha char in str to lower-case */
 char* str_tolower(char *str) FAST_FUNC;
 
+#if defined(__QNX__) && !defined(O_NOFOLLOW)
+/* QNX 6.5 cannot refuse to open through a symbolic link (BlackBerry 10
+ * can): where a tool asks for that, the file is opened without it. */
+# define O_NOFOLLOW 0
+#endif
 #if defined(__QNX__)
 /* BlackBerry 10's <netdb.h> makes h_errno a call of __h_errno(), which QNX
  * 6.5's socket library does not have. The plain variable is in both. */
@@ -1541,8 +1546,21 @@ uint32_t getopt32long(char **argv, const char *optstring, const char *longopts, 
  */
 #if defined(__QNX__)
 /* BusyBox's own getopt() and getopt_long() (libbb/qnx_getopt.c): QNX 6.5
- * has no getopt_long(), and its getopt() lacks what BusyBox counts on. */
-struct option;
+ * has no getopt_long(), and its getopt() lacks what BusyBox counts on.
+ * Nor has 6.5 a <getopt.h>; BlackBerry 10 has one. */
+# if defined(__has_include) && __has_include(<getopt.h>)
+#  include <getopt.h>
+# else
+struct option {
+	const char *name;
+	int has_arg;
+	int *flag;
+	int val;
+};
+#  define no_argument 0
+#  define required_argument 1
+#  define optional_argument 2
+# endif
 int bb_getopt(int argc, char *const argv[], const char *optstring) FAST_FUNC;
 int bb_getopt_long(int argc, char *const *argv, const char *optstring,
 		const struct option *longopts, int *idx) FAST_FUNC;

@@ -33,8 +33,6 @@
 
 #if defined(__QNX__)
 
-#include <getopt.h>
-
 /* optarg, optind, opterr and optopt are the C library's own. Where the
  * next option character is, inside argv[optind]: */
 static int optpos;

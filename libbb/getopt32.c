@@ -6,7 +6,8 @@
  *
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
-#if ENABLE_LONG_OPTS
+#if ENABLE_LONG_OPTS && !defined(__QNX__)
+/* On QNX libbb.h has it, or what stands in for it */
 # include <getopt.h>
 #endif
 #include "libbb.h"
