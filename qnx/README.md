@@ -38,20 +38,20 @@ stripped program in `./busybox`; every build starts clean. They need on the
   `make` and `python3`.
 
 The container image `ghcr.io/xiazy/blackberry10-toolchain` has all of
-them (`qnx65-cc` from the version that added the QNX 6.5 target on). From a
-clean checkout, with the version of the image that the released files are
+them. From a clean checkout, with the version of the image that the released files are
 built with:
 
     docker run --rm -v "$PWD:/src" -w /src --user "$(id -u):$(id -g)" \
         -e SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)" \
-        ghcr.io/xiazy/blackberry10-toolchain@sha256:e56e8572589d46d86f7be108d6d14cfe20a5097c46ac9c655edd042eecd437be \
+        ghcr.io/xiazy/blackberry10-toolchain@sha256:60ce49510a37ed92368cca010bbaabf97b12d209b9fab179e8491b266bb2578f \
         qnx/build.sh bb10
 
 BusyBox writes its build time into the program; `SOURCE_DATE_EPOCH` sets it
 to the time of the commit, so the same commit built with the same image
 gives the same file, byte for byte. `.github/workflows/build.yml` builds
-every push this way, and a tag `v*` publishes that build as a release with
-its checksum, so a released file can be rebuilt and compared.
+both files on every push this way, and a tag `v*` publishes them as a
+release with their checksums, so a released file can be rebuilt and
+compared.
 
 Two helpers stand between BusyBox's build and the toolchain:
 

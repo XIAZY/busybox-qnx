@@ -1,9 +1,10 @@
-# Builds BusyBox for BlackBerry 10 with qnx/build.sh in the toolchain's
-# container image. Every push and pull request keeps the program as a build
-# result; a tag v* publishes it as a release with its checksum.
+# Builds BusyBox for QNX with qnx/build.sh in the toolchain's container
+# image: one file for QNX 6.5 on x86 and one for BlackBerry 10. Every push
+# and pull request keeps both as build results; a tag v* publishes them as a
+# release with their checksums.
 #
-# The build is reproducible: the same commit and the same image give the
-# same file (qnx/README.md), so a release carries the same bytes as the
+# The builds are reproducible: the same commit and the same image give the
+# same files (qnx/README.md), so a release carries the same bytes as the
 # build of its commit.
 name: build
 
@@ -19,10 +20,24 @@ permissions:
 
 env:
   # ghcr.io/xiazy/blackberry10-toolchain, pinned by digest (the multi-arch tag).
-  IMAGE: ghcr.io/xiazy/blackberry10-toolchain@sha256:e56e8572589d46d86f7be108d6d14cfe20a5097c46ac9c655edd042eecd437be
+  IMAGE: ghcr.io/xiazy/blackberry10-toolchain@sha256:60ce49510a37ed92368cca010bbaabf97b12d209b9fab179e8491b266bb2578f
 
 jobs:
   build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # What each file must be: its processor as readelf names it, and
+          # the libraries it may need, which are its system's own.
+          - target: qnx65
+            name: qnx65-x86
+            machine: Intel 80386
+            needed: "libc.so.3 libm.so.2 libsocket.so.3 "
+          - target: bb10
+            name: bb10-armle-v7
+            machine: ARM
+            needed: "libbps.so.3 libc.so.3 libm.so.2 libsocket.so.3 "
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -30,27 +45,30 @@ jobs:
         run: |
           docker run --rm -v "$PWD:/src" -w /src --user "$(id -u):$(id -g)" \
             -e SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)" \
-            "$IMAGE" qnx/build.sh
-      - name: Check that it is a QNX program for 32-bit ARM
+            "$IMAGE" qnx/build.sh ${{ matrix.target }}
+      - name: Check that it is a 32-bit QNX program for its processor
+        env:
+          MACHINE: ${{ matrix.machine }}
+          NEEDED: ${{ matrix.needed }}
         run: |
           file busybox
           readelf -h busybox | grep -q 'Class: *ELF32'
-          readelf -h busybox | grep -q 'Machine: *ARM'
+          readelf -h busybox | grep -q "Machine: *$MACHINE\$"
           readelf -l busybox | grep -q 'interpreter: /usr/lib/ldqnx.so.2'
-          # Linked against the phone's own libraries and nothing else.
+          # Linked against its system's own libraries and nothing else.
           needed=$(readelf -d busybox | sed -n 's/.*(NEEDED).*\[\(.*\)\]/\1/p' | sort | tr '\n' ' ')
           echo "needs: $needed"
-          [ "$needed" = "libbps.so.3 libc.so.3 libm.so.2 libsocket.so.3 " ]
+          [ "$needed" = "$NEEDED" ]
       - name: Name the file and write its checksum
         run: |
           version=$(sed -n 's/^VERSION = //p; s/^PATCHLEVEL = //p; s/^SUBLEVEL = //p' Makefile | paste -sd.)
-          name=busybox-$version-bb10-armle-v7
+          name=busybox-$version-${{ matrix.name }}
           mkdir out
           cp busybox "out/$name"
           (cd out && sha256sum "$name" > "$name.sha256" && cat "$name.sha256")
       - uses: actions/upload-artifact@v4
         with:
-          name: busybox-bb10-armle-v7
+          name: busybox-${{ matrix.name }}
           path: out/*
           if-no-files-found: error
 
@@ -64,12 +82,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: busybox-bb10-armle-v7
+          pattern: busybox-*
           path: out
+          merge-multiple: true
       - name: Notes
         run: |
           {
-            echo "BusyBox for BlackBerry 10 (QNX 8, 32-bit ARM): one program, linked against the phone's own libraries. Built from this tag by the build workflow; \`qnx/README.md\` says how to build it again and get the same file."
+            echo "BusyBox for QNX 6.5 (x86) and BlackBerry 10 (QNX 8, 32-bit ARM): one program for each, built from the same source and linked against the system's own libraries. Built from this tag by the build workflow; \`qnx/README.md\` says how to build them again and get the same files."
             echo
             echo '```'
             cat out/*.sha256
