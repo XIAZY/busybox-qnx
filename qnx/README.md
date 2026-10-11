@@ -143,11 +143,11 @@ records, `sync -f` (`syncfs()`), `stat -f` (`statfs()`), `sendfile()`.
 | `__h_errno` (BlackBerry 10's `h_errno` is a call of it) | the plain variable `h_errno`, which both have |
 | `__stack_chk_fail`, `__stack_chk_guard` | supplied by BusyBox where it is built without the stack protector: the parts of the SDK's static C library that are linked in (`regcomp`, `scandir`, `popen`, `strptime`, `getlogin`) need them |
 
-Only for x86, whichever system: BusyBox's replacement functions go by
-names of their own (`bb_strndup`, `bb_stpcpy`, ...), because of the
-register calling convention BusyBox uses there; and the byte swaps are the
-compiler's, because the ones in QNX's headers are x86 assembly that clang
-does not take.
+Two things are done on every QNX build, though it is x86 that needs them:
+BusyBox's replacement functions go by names of their own (`bb_strndup`,
+`bb_stpcpy`, ...), because of the register calling convention BusyBox uses
+on x86; and the byte swaps are the compiler's, because the ones in QNX's
+headers are x86 assembly that clang does not take.
 
 ## Licences
 
