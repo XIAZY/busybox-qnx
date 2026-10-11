@@ -1534,6 +1534,16 @@ uint32_t getopt32long(char **argv, const char *optstring, const char *longopts, 
  * By ~2008, OpenBSD 3.4 was changed to survive glibc-like optind = 0
  * (to interpret it as if optreset was set).
  */
+#if defined(__QNX__)
+/* BusyBox's own getopt() and getopt_long() (libbb/qnx_getopt.c): QNX 6.5
+ * has no getopt_long(), and its getopt() lacks what BusyBox counts on. */
+struct option;
+int bb_getopt(int argc, char *const argv[], const char *optstring) FAST_FUNC;
+int bb_getopt_long(int argc, char *const *argv, const char *optstring,
+		const struct option *longopts, int *idx) FAST_FUNC;
+# define getopt bb_getopt
+# define getopt_long bb_getopt_long
+#endif
 #if 1 /*def __GLIBC__*/
 #define GETOPT_RESET() (optind = 0)
 #else /* BSD style */
