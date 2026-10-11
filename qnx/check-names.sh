@@ -27,7 +27,8 @@
 #
 # Each ALLOWED is a shared library, or a text file with one name a line
 # (qnx/qnx650-names/*.txt: what QNX 6.5.0's libc, libm and libsocket
-# export). The program's needs are its undefined dynamic symbols and the
+# export). The program's needs are its undefined dynamic symbols (weak ones
+# aside, which the loader may leave unresolved) and the
 # data symbols it copies from a library (COPY relocations), which a list of
 # undefined symbols does not show. Any name outside the allowed ones is
 # printed, and the exit status is 1: the program would not load.
@@ -51,7 +52,10 @@ symbols() {
     "$readelf" --dyn-syms -W "$1" | awk '
         $1 ~ /^[0-9]+:$/ && NF >= 8 {
             name = $NF; sub(/@.*/, "", name)
-            print ($(NF-1) == "UND" ? "UND" : "DEF"), name
+            # A weak undefined symbol may stay unresolved at load time:
+            # crtbegin.o of gcc has three (_Jv_RegisterClasses and the
+            # frame-info pair).
+            print ($(NF-1) != "UND" ? "DEF" : $(NF-3) == "WEAK" ? "WEAK" : "UND"), name
         }'
 }
 
