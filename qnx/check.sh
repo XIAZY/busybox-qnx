@@ -142,6 +142,12 @@ t ash-bg-wait "done" $B ash -c 'sleep 0.1 & wait; echo done'
 t ash-trap "caught" $B ash -c 'trap "echo caught" USR1; kill -USR1 $$; true'
 t kill "yes" $B sh -c "$B sleep 30 & p=\$!; $B kill \$p && echo yes"
 r stty $B sh -c "$B stty -a </dev/null; true"
+t getopt-long "yes" $B sh -c "$B mkdir --parents dd1/dd2/dd3 && $B test -d dd1/dd2/dd3 && echo yes"
+t getopt-after-arguments "2" $B grep apple f -c
+t getopt-cluster "2" $B sh -c "$B grep -ic APPLE f"
+t timegm "1000000000" $B date -u -d '2001-09-09 01:46:40' +%s
+t timegm-leap "2000-02-29 12:34:56 060 951827696" $B date -u -d '2000-02-29 12:34:56' '+%Y-%m-%d %H:%M:%S %j %s'
+t date-seconds "x1000000000y%" $B date -u -d @1000000000 +x%sy%%
 t sleep-fraction "yes" $B sh -c "$B sleep 0.2 && echo yes"
 t timeout "stopped" $B sh -c "{ $B timeout 1 $B sleep 5 || echo stopped; } 2>/dev/null"
 t unzip "yes" $B sh -c "$B unzip 2>&1 | $B grep -qi usage && echo yes"
